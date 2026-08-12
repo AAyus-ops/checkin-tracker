@@ -442,8 +442,8 @@ function renderToday() {
       '<div class="habit-info">' +
         '<div class="habit-name">' + esc(h.name) + '</div>' +
         '<div class="habit-meta">' +
-          '<span class="chip">🔥 连续 ' + calcStreak(h) + ' 天</span>' +
-          '<span class="chip">📊 完成率 ' + calcRate(h) + '%</span>' +
+          '<span class="chip">连续 ' + calcStreak(h) + ' 天</span>' +
+          '<span class="chip">完成率 ' + calcRate(h) + '%</span>' +
           timeChip +
         '</div>' +
       '</div>' +
