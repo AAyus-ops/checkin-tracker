@@ -16,6 +16,7 @@
   --blur: 20px;
   --card-shadow: 0 4px 16px rgba(0, 0, 0, .08);
   --card-border: rgba(255, 255, 255, .6);
+  --card-alpha: 0.62;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,7 +58,7 @@ button { font-family: inherit; }
 .manage-row,
 .cal-cell,
 .modal {
-  background: rgba(255, 255, 255, .55);
+  background: rgba(255, 255, 255, var(--card-alpha, .62));
   border: 1px solid var(--card-border);
   box-shadow: var(--card-shadow);
   backdrop-filter: blur(var(--blur)) saturate(160%);
@@ -239,7 +240,7 @@ body.theme-solid .cal-weekday { background: transparent; border: none; }
 .cal-done { background: rgba(34, 197, 94, .28); color: #166534; }
 .cal-part { background: rgba(245, 158, 11, .28); color: #92400e; }
 .cal-miss { background: rgba(239, 68, 68, .25); color: #991b1b; }
-.cal-plain { background: rgba(255, 255, 255, .55); }
+.cal-plain { background: rgba(255, 255, 255, var(--card-alpha, .62)); }
 body.theme-solid .cal-done { background: #dcfce7; }
 body.theme-solid .cal-part { background: #fef3c7; }
 body.theme-solid .cal-miss { background: #fee2e2; }
@@ -460,3 +461,8 @@ body.theme-solid .tabbar { background: rgba(255, 255, 255, .97); backdrop-filter
   padding: 0;
   margin: 0;
 }
+
+/* ========== 卡片透明度滑杆 ========== */
+.alpha-row { display: flex; align-items: center; gap: 10px; }
+.alpha-row input[type="range"] { flex: 1; accent-color: var(--primary); height: 28px; }
+.alpha-value { font-size: 13px; color: var(--text-sub); min-width: 42px; text-align: right; }
