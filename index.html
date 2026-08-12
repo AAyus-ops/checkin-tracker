@@ -93,6 +93,15 @@
             <button class="swatch" data-accent="#db2777" type="button" title="粉色" style="--sw:#db2777;"></button>
             <button class="swatch" data-accent="#ea580c" type="button" title="橙色" style="--sw:#ea580c;"></button>
           </div>
+          <div class="settings-label">文字颜色（改善磨砂可读性）</div>
+          <div class="swatches" id="textSwatches">
+            <button class="swatch" data-text="" type="button" title="自动（默认）" style="--sw: conic-gradient(#111827 0 50%, #ffffff 50%);">自动</button>
+            <button class="swatch" data-text="#111827" type="button" title="深色文字" style="--sw:#111827;"></button>
+            <button class="swatch" data-text="#ffffff" type="button" title="白色文字" style="--sw:#ffffff;"></button>
+            <label class="swatch swatch-custom" title="自定义颜色" style="--sw: conic-gradient(#f87171,#facc15,#4ade80,#60a5fa,#c084fc,#f87171);">🎨
+              <input type="color" id="textColorPicker" value="#1f2937">
+            </label>
+          </div>
         </div>
       </section>
     </main>
