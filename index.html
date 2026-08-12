@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="bg-layer" id="bgLayer"></div>
   <div class="app">
     <header class="topbar">
       <h1 class="app-title">📋 打卡监督</h1>
@@ -60,6 +61,20 @@
         <div id="emptyManage" class="empty" hidden>
           <p class="empty-icon">🗂️</p>
           <p>暂无习惯，先添加一个吧</p>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="settings-title">背景设置</h3>
+          <div class="bg-preview" id="bgPreview"><span class="bg-preview-tag">默认背景</span></div>
+          <div class="settings-row">
+            <button class="btn btn-ghost" id="bgUploadBtn" type="button">上传图片</button>
+            <input type="file" id="bgFileInput" accept="image/*" hidden>
+          </div>
+          <div class="settings-row">
+            <input class="text-input" id="bgUrlInput" type="text" placeholder="或粘贴图片链接（http 开头）" autocomplete="off">
+            <button class="btn btn-primary" id="bgApplyBtn" type="button">应用</button>
+          </div>
+          <button class="btn btn-ghost btn-block" id="bgResetBtn" type="button">恢复默认背景</button>
         </div>
       </section>
     </main>
