@@ -36,7 +36,7 @@ button { font-family: inherit; }
   max-width: 640px;
   margin: 0 auto;
   min-height: 100vh;
-  padding-bottom: 96px;
+  padding-bottom: 116px;
 }
 
 /* ========== 背景层 ========== */
@@ -354,39 +354,44 @@ body.theme-solid .seg-btn { background: #ffffff; }
 }
 .swatch.active { outline: 2px solid var(--primary); outline-offset: 2px; }
 
-/* ========== 底部导航 ========== */
+/* ========== 底部悬浮导航 ========== */
 .tabbar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   z-index: 20;
-  margin: 0 auto;
-  max-width: 640px;
   display: flex;
-  gap: 8px;
-  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
-  background: rgba(255, 255, 255, .6);
+  gap: 4px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .68);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-top: 1px solid var(--border);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .16);
 }
 body.theme-solid .tabbar { background: rgba(255, 255, 255, .97); backdrop-filter: none; -webkit-backdrop-filter: none; }
 .tab {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 6px 0;
+  padding: 8px 20px;
   border: none;
   background: transparent;
   cursor: pointer;
   font-size: 12px;
   color: var(--text-sub);
-  border-radius: 12px;
+  border-radius: 999px;
+  transition: background .2s, color .2s;
 }
-.tab.active { color: var(--primary); font-weight: 600; background: var(--primary-soft); }
+.tab.active {
+  color: #fff;
+  background: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
+}
 .tab-icon { font-size: 20px; line-height: 1; }
 
 /* ========== 弹窗 ========== */
