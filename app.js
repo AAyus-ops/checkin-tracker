@@ -10,6 +10,7 @@ function defaultState() {
     background: null,
     uiMaterial: 'acrylic',
     uiAccent: null,
+    uiText: null,
     habits: [],
     records: {}
   };
@@ -26,6 +27,7 @@ function load() {
       background: typeof data.background === 'string' ? data.background : null,
       uiMaterial: data.uiMaterial === 'solid' ? 'solid' : 'acrylic',
       uiAccent: typeof data.uiAccent === 'string' && data.uiAccent ? data.uiAccent : null,
+      uiText: typeof data.uiText === 'string' && data.uiText ? data.uiText : null,
       habits: data.habits.map(function (h) {
         return {
           id: String(h.id),
@@ -328,6 +330,16 @@ function applyTheme() {
   var primaryDark = rgbToHex(hslToRgb(hsl.h, s, Math.max(0.3, Math.min(Math.max(hsl.l, 0.4), 0.5) - 0.08)));
   var headerText = state._autoLum != null && state._autoLum > 0.55 ? '#1f2937' : '#ffffff';
 
+  if (state.uiText) {
+    var tRgb = hexToRgb(state.uiText);
+    var tLum = lumOf(tRgb);
+    root.style.setProperty('--text', state.uiText);
+    root.style.setProperty('--text-sub', tLum > 0.5 ? 'rgba(0, 0, 0, .6)' : 'rgba(255, 255, 255, .82)');
+  } else {
+    root.style.setProperty('--text', '#1f2937');
+    root.style.setProperty('--text-sub', '#6b7280');
+  }
+
   root.style.setProperty('--primary', primary);
   root.style.setProperty('--primary-dark', primaryDark);
   root.style.setProperty('--primary-soft', hexToRgba(primary, 0.14));
@@ -400,15 +412,28 @@ function setUiAccent(hex) {
   renderThemePanel();
 }
 
+function setUiText(v) {
+  state.uiText = v || null;
+  save();
+  applyTheme();
+  renderThemePanel();
+}
+
 function renderThemePanel() {
   var matBtns = document.querySelectorAll('.seg-btn');
   matBtns.forEach(function (b) {
     b.classList.toggle('active', b.dataset.mat === state.uiMaterial);
   });
-  var swatches = document.querySelectorAll('.swatch');
+  var swatches = document.querySelectorAll('.swatch[data-accent]');
   swatches.forEach(function (s) {
     s.classList.toggle('active', (s.dataset.accent || null) === (state.uiAccent || null));
   });
+  var textSwatches = document.querySelectorAll('.swatch[data-text]');
+  textSwatches.forEach(function (s) {
+    s.classList.toggle('active', (s.dataset.text || null) === (state.uiText || null));
+  });
+  var picker = document.getElementById('textColorPicker');
+  if (picker) picker.value = state.uiText || '#1f2937';
 }
 
 /* ============ 今日视图 ============ */
@@ -759,6 +784,14 @@ document.addEventListener('DOMContentLoaded', function () {
     var s = e.target.closest('.swatch');
     if (!s) return;
     setUiAccent(s.dataset.accent || null);
+  });
+  document.getElementById('textSwatches').addEventListener('click', function (e) {
+    var s = e.target.closest('.swatch');
+    if (!s || !s.dataset.text) return;
+    setUiText(s.dataset.text || null);
+  });
+  document.getElementById('textColorPicker').addEventListener('input', function (e) {
+    setUiText(e.target.value);
   });
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
