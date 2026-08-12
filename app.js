@@ -12,6 +12,9 @@ function defaultState() {
     uiAccent: null,
     uiText: null,
     cardAlpha: 0.62,
+    reminderEnabled: false,
+    reminderTime: '20:00',
+    reminderLastDate: null,
     habits: [],
     records: {}
   };
@@ -30,6 +33,9 @@ function load() {
       uiAccent: typeof data.uiAccent === 'string' && data.uiAccent ? data.uiAccent : null,
       uiText: typeof data.uiText === 'string' && data.uiText ? data.uiText : null,
       cardAlpha: typeof data.cardAlpha === 'number' && data.cardAlpha >= 0.2 && data.cardAlpha <= 1 ? data.cardAlpha : 0.62,
+      reminderEnabled: !!data.reminderEnabled,
+      reminderTime: typeof data.reminderTime === 'string' && /^\d{2}:\d{2}$/.test(data.reminderTime) ? data.reminderTime : '20:00',
+      reminderLastDate: typeof data.reminderLastDate === 'string' ? data.reminderLastDate : null,
       habits: data.habits.map(function (h) {
         return {
           id: String(h.id),
@@ -452,6 +458,94 @@ function renderThemePanel() {
   if (valueEl) valueEl.textContent = Math.round(state.cardAlpha * 100) + '%';
 }
 
+/* ============ 打卡提醒 ============ */
+function requestNotifyPermission() {
+  if (!('Notification' in window)) return Promise.resolve('unsupported');
+  if (Notification.permission === 'granted') return Promise.resolve('granted');
+  return Notification.requestPermission();
+}
+
+function sendNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+  try {
+    new Notification(title, { body: body });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function checkReminder() {
+  if (!state.reminderEnabled || !state.reminderTime) return;
+  var now = new Date();
+  var hhmm = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  if (hhmm !== state.reminderTime) return;
+  if (state.reminderLastDate === todayStr()) return;
+  if (sendNotification('该打卡啦！', '今天还没打卡，快去完成吧 💪')) {
+    state.reminderLastDate = todayStr();
+    save();
+  }
+}
+
+function setReminderEnabled(on) {
+  if (on) {
+    requestNotifyPermission().then(function (p) {
+      if (p === 'granted') {
+        state.reminderEnabled = true;
+        save();
+        renderReminderPanel();
+        alert('提醒已开启 ✅ 每天 ' + state.reminderTime + ' 提醒打卡');
+      } else {
+        alert('通知权限未开启，无法提醒。请允许通知后重试；若已被拒绝，需到浏览器设置里开启本网站的通知权限。');
+      }
+    });
+  } else {
+    state.reminderEnabled = false;
+    save();
+    renderReminderPanel();
+    alert('提醒已关闭');
+  }
+}
+
+function testNotification() {
+  requestNotifyPermission().then(function (p) {
+    if (p === 'granted') {
+      if (sendNotification('打卡提醒测试', '通知已开启 ✅')) {
+        alert('测试通知已发送 ✅');
+      } else {
+        alert('通知发送失败');
+      }
+    } else {
+      alert('需要先允许通知权限（点击「开启提醒」时会有系统弹窗）');
+    }
+  });
+}
+
+function renderReminderPanel() {
+  var timeEl = document.getElementById('reminderTime');
+  var toggleBtn = document.getElementById('reminderToggleBtn');
+  var statusEl = document.getElementById('reminderStatus');
+  if (!timeEl || !toggleBtn || !statusEl) return;
+  timeEl.value = state.reminderTime;
+
+  var permText;
+  if (!('Notification' in window)) permText = '当前浏览器不支持通知';
+  else if (Notification.permission === 'granted') permText = '通知权限：已允许';
+  else if (Notification.permission === 'denied') permText = '通知权限：已拒绝（需到浏览器设置开启）';
+  else permText = '通知权限：未请求';
+
+  var on = state.reminderEnabled;
+  toggleBtn.textContent = on ? '关闭提醒' : '开启提醒';
+  toggleBtn.classList.toggle('btn-primary', !on);
+  toggleBtn.classList.toggle('btn-ghost', on);
+
+  var note = on ? '已开启：每天 ' + state.reminderTime + ' 提醒（需保持页面打开或已添加到主屏幕）' : '未开启提醒';
+  if (on && typeof navigator !== 'undefined' && /iP(hone|ad|od)/.test(navigator.userAgent)) {
+    note += '｜iOS 请先在 Safari「添加到主屏幕」';
+  }
+  statusEl.textContent = note + '｜' + permText;
+}
+
 /* ============ 今日视图 ============ */
 function renderToday() {
   var habits = sortedHabits();
@@ -647,6 +741,7 @@ function renderManage() {
   });
   renderBgPreview();
   renderThemePanel();
+  renderReminderPanel();
 }
 
 function openRename(id) {
@@ -812,6 +907,19 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('cardAlphaRange').addEventListener('input', function (e) {
     setCardAlpha(e.target.value);
   });
+
+  checkReminder();
+  setInterval(checkReminder, 30000);
+
+  document.getElementById('reminderTime').addEventListener('change', function (e) {
+    state.reminderTime = e.target.value || '20:00';
+    save();
+    renderReminderPanel();
+  });
+  document.getElementById('reminderToggleBtn').addEventListener('click', function () {
+    setReminderEnabled(!state.reminderEnabled);
+  });
+  document.getElementById('reminderTestBtn').addEventListener('click', testNotification);
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modalOverlay').addEventListener('click', function (e) {
