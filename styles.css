@@ -392,7 +392,6 @@ body.theme-solid .tabbar { background: rgba(255, 255, 255, .97); backdrop-filter
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
 }
-.tab-icon { font-size: 20px; line-height: 1; }
 
 /* ========== 弹窗 ========== */
 .modal-overlay {
