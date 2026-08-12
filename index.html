@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16a34a">
+  <title>打卡监督</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <h1 class="app-title">📋 打卡监督</h1>
+      <p class="today-line" id="todayLine"></p>
+    </header>
+
+    <main>
+      <!-- 今日 -->
+      <section id="view-today" class="view">
+        <div class="progress-card">
+          <div class="progress-head">
+            <span class="progress-label">今日完成</span>
+            <span class="progress-num" id="progressNum">0/0</span>
+          </div>
+          <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+          <p class="progress-hint" id="progressHint"></p>
+        </div>
+        <div id="todayList"></div>
+        <div id="emptyToday" class="empty" hidden>
+          <p class="empty-icon">🌱</p>
+          <p>还没有打卡习惯</p>
+          <p class="empty-sub">去「管理」添加第一个习惯吧</p>
+        </div>
+      </section>
+
+      <!-- 日历 -->
+      <section id="view-calendar" class="view" hidden>
+        <div class="cal-toolbar">
+          <button class="icon-btn" id="calPrev" aria-label="上个月">‹</button>
+          <h2 class="cal-title" id="calTitle"></h2>
+          <button class="icon-btn" id="calNext" aria-label="下个月">›</button>
+        </div>
+        <select class="cal-filter" id="calFilter" aria-label="选择习惯"></select>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="legend">
+          <span class="legend-item"><i class="dot dot-done"></i>全完成</span>
+          <span class="legend-item"><i class="dot dot-part"></i>部分完成</span>
+          <span class="legend-item"><i class="dot dot-miss"></i>漏卡</span>
+          <span class="legend-item"><i class="dot dot-future"></i>未到 / 未来</span>
+        </div>
+      </section>
+
+      <!-- 管理 -->
+      <section id="view-manage" class="view" hidden>
+        <form class="add-form" id="addForm">
+          <input class="text-input" id="newHabitName" type="text" maxlength="20" placeholder="输入新习惯，如：学习" autocomplete="off">
+          <button type="submit" class="btn btn-primary">添加</button>
+        </form>
+        <div id="manageList"></div>
+        <div id="emptyManage" class="empty" hidden>
+          <p class="empty-icon">🗂️</p>
+          <p>暂无习惯，先添加一个吧</p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tab active" data-view="today"><span class="tab-icon">✅</span><span>今日</span></button>
+      <button class="tab" data-view="calendar"><span class="tab-icon">📅</span><span>日历</span></button>
+      <button class="tab" data-view="manage"><span class="tab-icon">⚙️</span><span>管理</span></button>
+    </nav>
+  </div>
+
+  <!-- 通用弹窗 -->
+  <div class="modal-overlay" id="modalOverlay" hidden>
+    <div class="modal">
+      <h3 class="modal-title" id="modalTitle"></h3>
+      <div class="modal-body" id="modalBody"></div>
+      <button class="btn btn-ghost modal-close" id="modalClose">关闭</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
