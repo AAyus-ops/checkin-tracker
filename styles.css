@@ -466,3 +466,5 @@ body.theme-solid .tabbar { background: rgba(255, 255, 255, .97); backdrop-filter
 .alpha-row { display: flex; align-items: center; gap: 10px; }
 .alpha-row input[type="range"] { flex: 1; accent-color: var(--primary); height: 28px; }
 .alpha-value { font-size: 13px; color: var(--text-sub); min-width: 42px; text-align: right; }
+/* ========== 打卡提醒 ========== */
+.settings-note { font-size: 12px; color: var(--text-sub); margin-top: 10px; line-height: 1.6; }
