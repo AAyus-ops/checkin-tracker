@@ -5,7 +5,7 @@ var STORAGE_KEY = 'plan-checkin.v1';
 var state = load();
 
 function defaultState() {
-  return { version: 1, habits: [], records: {} };
+  return { version: 1, background: null, habits: [], records: {} };
 }
 
 function load() {
@@ -16,6 +16,7 @@ function load() {
     if (!data || typeof data !== 'object' || !Array.isArray(data.habits)) return defaultState();
     return {
       version: 1,
+      background: typeof data.background === 'string' ? data.background : null,
       habits: data.habits.map(function (h) {
         return {
           id: String(h.id),
@@ -173,6 +174,67 @@ function esc(s) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/* ============ 背景设置 ============ */
+function bgUrl(u) {
+  return "url('" + String(u).replace(/'/g, '%27').replace(/"/g, '%22') + "')";
+}
+
+function applyBackground() {
+  var layer = document.getElementById('bgLayer');
+  if (!layer) return;
+  layer.style.backgroundImage = state.background ? bgUrl(state.background) : '';
+}
+
+function renderBgPreview() {
+  var el = document.getElementById('bgPreview');
+  if (!el) return;
+  if (state.background) {
+    el.style.backgroundImage = bgUrl(state.background);
+    el.innerHTML = '<span class="bg-preview-tag">已设置背景</span>';
+  } else {
+    el.style.backgroundImage = '';
+    el.innerHTML = '<span class="bg-preview-tag">默认背景</span>';
+  }
+}
+
+function setBackground(bg) {
+  if (bg && String(bg).length > 4500000) {
+    alert('图片太大，无法保存，请换一张或使用图片链接');
+    return;
+  }
+  state.background = bg;
+  save();
+  applyBackground();
+  renderBgPreview();
+}
+
+function processImage(file, cb) {
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var img = new Image();
+    img.onload = function () {
+      var MAX = 1920;
+      var w = img.width;
+      var h = img.height;
+      if (w > MAX || h > MAX) {
+        var ratio = Math.min(MAX / w, MAX / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = function () { alert('图片读取失败，请换一张试试'); };
+    img.src = e.target.result;
+  };
+  reader.onerror = function () { alert('文件读取失败'); };
+  reader.readAsDataURL(file);
 }
 
 /* ============ 今日视图 ============ */
@@ -368,6 +430,7 @@ function renderManage() {
       '</div>';
     el.appendChild(row);
   });
+  renderBgPreview();
 }
 
 function openRename(id) {
@@ -420,6 +483,7 @@ function switchView(name) {
 /* ============ 事件绑定 ============ */
 document.addEventListener('DOMContentLoaded', function () {
   initCalendar();
+  applyBackground();
 
   var d = parseDate(todayStr());
   document.getElementById('todayLine').textContent =
@@ -476,6 +540,36 @@ document.addEventListener('DOMContentLoaded', function () {
         if (calFilter === id) calFilter = 'all';
         renderManage();
       }
+    }
+  });
+
+  document.getElementById('bgUploadBtn').addEventListener('click', function () {
+    document.getElementById('bgFileInput').click();
+  });
+  document.getElementById('bgFileInput').addEventListener('change', function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    processImage(file, function (dataUrl) {
+      setBackground(dataUrl);
+      document.getElementById('bgFileInput').value = '';
+      alert('背景已更新 ✅');
+    });
+  });
+  document.getElementById('bgApplyBtn').addEventListener('click', function () {
+    var input = document.getElementById('bgUrlInput');
+    var url = input.value.trim();
+    if (!url) return;
+    if (!/^https?:\/\/.+/i.test(url)) {
+      alert('请输入以 http:// 或 https:// 开头的图片链接');
+      return;
+    }
+    setBackground(url);
+    input.value = '';
+    alert('背景已更新 ✅');
+  });
+  document.getElementById('bgResetBtn').addEventListener('click', function () {
+    if (confirm('确定恢复默认背景吗？')) {
+      setBackground(null);
     }
   });
 
