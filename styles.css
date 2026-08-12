@@ -446,3 +446,17 @@ body.theme-solid .tabbar { background: rgba(255, 255, 255, .97); backdrop-filter
 .mini-btn:active { background: var(--primary-soft); }
 
 .modal-form { display: flex; flex-direction: column; gap: 10px; }
+
+/* ========== 自定义文字颜色 ========== */
+.swatch-custom { position: relative; overflow: hidden; }
+.swatch-custom input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
