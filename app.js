@@ -5,7 +5,14 @@ var STORAGE_KEY = 'plan-checkin.v1';
 var state = load();
 
 function defaultState() {
-  return { version: 1, background: null, habits: [], records: {} };
+  return {
+    version: 1,
+    background: null,
+    uiMaterial: 'acrylic',
+    uiAccent: null,
+    habits: [],
+    records: {}
+  };
 }
 
 function load() {
@@ -17,6 +24,8 @@ function load() {
     return {
       version: 1,
       background: typeof data.background === 'string' ? data.background : null,
+      uiMaterial: data.uiMaterial === 'solid' ? 'solid' : 'acrylic',
+      uiAccent: typeof data.uiAccent === 'string' && data.uiAccent ? data.uiAccent : null,
       habits: data.habits.map(function (h) {
         return {
           id: String(h.id),
@@ -176,6 +185,72 @@ function esc(s) {
     .replace(/'/g, '&#39;');
 }
 
+/* ============ 颜色工具 ============ */
+function hexToRgb(hex) {
+  var s = String(hex).replace('#', '');
+  if (s.length === 3) s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+  var n = parseInt(s, 16);
+  if (isNaN(n)) return { r: 22, g: 163, b: 74 };
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h = 0, s = 0, l = (max + min) / 2;
+  if (max !== min) {
+    var d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h /= 6;
+  }
+  return { h: h, s: s, l: l };
+}
+
+function hslToRgb(h, s, l) {
+  var r, g, b;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    var hue2rgb = function (p, q, t) {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    var p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+}
+
+function rgbToHex(rgb) {
+  return '#' + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+}
+
+function hexToRgba(hex, a) {
+  var c = hexToRgb(hex);
+  return 'rgba(' + c.r + ', ' + c.g + ', ' + c.b + ', ' + a + ')';
+}
+
+function lumOf(rgb) {
+  return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+}
+
+function accentFromColor(r, g, b) {
+  var hsl = rgbToHsl(r, g, b);
+  var s = Math.min(Math.max(hsl.s, 0.5), 0.85);
+  var l = Math.min(Math.max(hsl.l, 0.38), 0.52);
+  return rgbToHex(hslToRgb(hsl.h, s, l));
+}
+
 /* ============ 背景设置 ============ */
 function bgUrl(u) {
   return "url('" + String(u).replace(/'/g, '%27').replace(/"/g, '%22') + "')";
@@ -208,6 +283,7 @@ function setBackground(bg) {
   save();
   applyBackground();
   renderBgPreview();
+  refreshAutoAccent();
 }
 
 function processImage(file, cb) {
@@ -235,6 +311,104 @@ function processImage(file, cb) {
   };
   reader.onerror = function () { alert('文件读取失败'); };
   reader.readAsDataURL(file);
+}
+
+/* ============ 主题 ============ */
+function applyTheme() {
+  var root = document.documentElement;
+  var accentHex;
+  if (state.uiAccent) accentHex = state.uiAccent;
+  else if (state._autoAccent) accentHex = state._autoAccent;
+  else accentHex = '#16a34a';
+
+  var rgb = hexToRgb(accentHex);
+  var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  var s = Math.min(Math.max(hsl.s, 0.5), 0.8);
+  var primary = rgbToHex(hslToRgb(hsl.h, s, Math.min(Math.max(hsl.l, 0.4), 0.5)));
+  var primaryDark = rgbToHex(hslToRgb(hsl.h, s, Math.max(0.3, Math.min(Math.max(hsl.l, 0.4), 0.5) - 0.08)));
+  var headerText = state._autoLum != null && state._autoLum > 0.55 ? '#1f2937' : '#ffffff';
+
+  root.style.setProperty('--primary', primary);
+  root.style.setProperty('--primary-dark', primaryDark);
+  root.style.setProperty('--primary-soft', hexToRgba(primary, 0.14));
+  root.style.setProperty('--header-bg', 'linear-gradient(135deg, ' + hexToRgba(primary, 0.8) + ', ' + hexToRgba(primaryDark, 0.8) + ')');
+  root.style.setProperty('--header-bg-solid', 'linear-gradient(135deg, ' + primary + ', ' + primaryDark + ')');
+  root.style.setProperty('--header-text', headerText);
+
+  document.body.classList.toggle('theme-solid', state.uiMaterial === 'solid');
+  document.body.classList.toggle('theme-acrylic', state.uiMaterial === 'acrylic');
+}
+
+function extractAccent(src, cb) {
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function () {
+    try {
+      var c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 64;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, 64, 64);
+      var d = ctx.getImageData(0, 0, 64, 64).data;
+      var r = 0, g = 0, b = 0, n = 0, i;
+      for (i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+      cb({ r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n) });
+    } catch (e) {
+      cb(null);
+    }
+  };
+  img.onerror = function () { cb(null); };
+  img.src = src;
+}
+
+function refreshAutoAccent() {
+  if (state.uiAccent || !state.background) {
+    state._autoAccent = null;
+    state._autoLum = null;
+    applyTheme();
+    return;
+  }
+  extractAccent(state.background, function (avg) {
+    if (avg) {
+      state._autoAccent = accentFromColor(avg.r, avg.g, avg.b);
+      state._autoLum = lumOf(avg);
+    } else {
+      state._autoAccent = null;
+      state._autoLum = null;
+    }
+    applyTheme();
+  });
+}
+
+function setUiMaterial(m) {
+  state.uiMaterial = m === 'solid' ? 'solid' : 'acrylic';
+  save();
+  applyTheme();
+  renderThemePanel();
+}
+
+function setUiAccent(hex) {
+  state.uiAccent = hex || null;
+  save();
+  if (state.uiAccent) {
+    state._autoAccent = null;
+    state._autoLum = null;
+    applyTheme();
+  } else {
+    refreshAutoAccent();
+  }
+  renderThemePanel();
+}
+
+function renderThemePanel() {
+  var matBtns = document.querySelectorAll('.seg-btn');
+  matBtns.forEach(function (b) {
+    b.classList.toggle('active', b.dataset.mat === state.uiMaterial);
+  });
+  var swatches = document.querySelectorAll('.swatch');
+  swatches.forEach(function (s) {
+    s.classList.toggle('active', (s.dataset.accent || null) === (state.uiAccent || null));
+  });
 }
 
 /* ============ 今日视图 ============ */
@@ -431,6 +605,7 @@ function renderManage() {
     el.appendChild(row);
   });
   renderBgPreview();
+  renderThemePanel();
 }
 
 function openRename(id) {
@@ -484,6 +659,8 @@ function switchView(name) {
 document.addEventListener('DOMContentLoaded', function () {
   initCalendar();
   applyBackground();
+  applyTheme();
+  refreshAutoAccent();
 
   var d = parseDate(todayStr());
   document.getElementById('todayLine').textContent =
@@ -571,6 +748,17 @@ document.addEventListener('DOMContentLoaded', function () {
     if (confirm('确定恢复默认背景吗？')) {
       setBackground(null);
     }
+  });
+
+  document.getElementById('materialSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('.seg-btn');
+    if (!b) return;
+    setUiMaterial(b.dataset.mat);
+  });
+  document.getElementById('accentSwatches').addEventListener('click', function (e) {
+    var s = e.target.closest('.swatch');
+    if (!s) return;
+    setUiAccent(s.dataset.accent || null);
   });
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
