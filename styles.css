@@ -34,6 +34,17 @@ button { font-family: inherit; }
   padding-bottom: 96px;
 }
 
+/* ========== 背景层 ========== */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--bg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* ========== 顶栏 ========== */
 .topbar {
   position: sticky;
@@ -241,6 +252,39 @@ main { padding: 16px; }
 }
 .manage-name { font-size: 15px; font-weight: 600; word-break: break-all; }
 .manage-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ========== 背景设置 ========== */
+.settings-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-top: 18px;
+}
+.settings-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+.bg-preview {
+  height: 130px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #eef1f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.bg-preview-tag {
+  font-size: 13px;
+  color: var(--text-sub);
+  background: rgba(255, 255, 255, .85);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+.settings-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.settings-row .text-input { flex: 1; }
 
 /* ========== 底部导航 ========== */
 .tabbar {
