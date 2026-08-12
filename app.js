@@ -11,6 +11,7 @@ function defaultState() {
     uiMaterial: 'acrylic',
     uiAccent: null,
     uiText: null,
+    cardAlpha: 0.62,
     habits: [],
     records: {}
   };
@@ -28,6 +29,7 @@ function load() {
       uiMaterial: data.uiMaterial === 'solid' ? 'solid' : 'acrylic',
       uiAccent: typeof data.uiAccent === 'string' && data.uiAccent ? data.uiAccent : null,
       uiText: typeof data.uiText === 'string' && data.uiText ? data.uiText : null,
+      cardAlpha: typeof data.cardAlpha === 'number' && data.cardAlpha >= 0.2 && data.cardAlpha <= 1 ? data.cardAlpha : 0.62,
       habits: data.habits.map(function (h) {
         return {
           id: String(h.id),
@@ -346,6 +348,7 @@ function applyTheme() {
   root.style.setProperty('--header-bg', 'linear-gradient(135deg, ' + hexToRgba(primary, 0.8) + ', ' + hexToRgba(primaryDark, 0.8) + ')');
   root.style.setProperty('--header-bg-solid', 'linear-gradient(135deg, ' + primary + ', ' + primaryDark + ')');
   root.style.setProperty('--header-text', headerText);
+  root.style.setProperty('--card-alpha', String(state.cardAlpha));
 
   document.body.classList.toggle('theme-solid', state.uiMaterial === 'solid');
   document.body.classList.toggle('theme-acrylic', state.uiMaterial === 'acrylic');
@@ -412,6 +415,15 @@ function setUiAccent(hex) {
   renderThemePanel();
 }
 
+function setCardAlpha(v) {
+  var a = Number(v);
+  if (isNaN(a)) a = 0.62;
+  state.cardAlpha = Math.min(0.95, Math.max(0.3, a));
+  save();
+  applyTheme();
+  renderThemePanel();
+}
+
 function setUiText(v) {
   state.uiText = v || null;
   save();
@@ -434,6 +446,10 @@ function renderThemePanel() {
   });
   var picker = document.getElementById('textColorPicker');
   if (picker) picker.value = state.uiText || '#1f2937';
+  var range = document.getElementById('cardAlphaRange');
+  var valueEl = document.getElementById('cardAlphaValue');
+  if (range) range.value = state.cardAlpha;
+  if (valueEl) valueEl.textContent = Math.round(state.cardAlpha * 100) + '%';
 }
 
 /* ============ 今日视图 ============ */
@@ -792,6 +808,9 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   document.getElementById('textColorPicker').addEventListener('input', function (e) {
     setUiText(e.target.value);
+  });
+  document.getElementById('cardAlphaRange').addEventListener('input', function (e) {
+    setCardAlpha(e.target.value);
   });
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
