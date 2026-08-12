@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#16a34a">
   <title>打卡监督</title>
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div class="bg-layer" id="bgLayer"></div>
@@ -119,6 +119,11 @@
             <button class="btn btn-ghost btn-block" id="reminderTestBtn" type="button">发送一条测试通知</button>
           </div>
           <p class="settings-note" id="reminderStatus">未开启</p>
+          <div class="settings-label">后台推送（关闭网页也能收到）</div>
+          <div class="settings-row">
+            <button class="btn btn-ghost btn-block" id="pushToggleBtn" type="button">开启后台推送</button>
+          </div>
+          <p class="settings-note" id="pushStatus">未开启</p>
         </div>
       </section>
     </main>
@@ -139,6 +144,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
