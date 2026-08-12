@@ -2,6 +2,8 @@
 
 /* ============ 数据层 ============ */
 var STORAGE_KEY = 'plan-checkin.v1';
+var VAPID_PUBLIC_KEY = 'TnOSOAOF-4AUt4RksGJAgcmdXjQ1Ipz8U96ViSL8BX71PBxm2YDIwBjE89FmgoBQkoANqXC4s2ffW3Ljra6zGw';
+var WORKER_URL = 'https://checkin-push.aayus-checkin.workers.dev';
 var state = load();
 
 function defaultState() {
@@ -15,6 +17,7 @@ function defaultState() {
     reminderEnabled: false,
     reminderTime: '20:00',
     reminderLastDate: null,
+    pushEnabled: false,
     habits: [],
     records: {}
   };
@@ -36,6 +39,7 @@ function load() {
       reminderEnabled: !!data.reminderEnabled,
       reminderTime: typeof data.reminderTime === 'string' && /^\d{2}:\d{2}$/.test(data.reminderTime) ? data.reminderTime : '20:00',
       reminderLastDate: typeof data.reminderLastDate === 'string' ? data.reminderLastDate : null,
+      pushEnabled: !!data.pushEnabled,
       habits: data.habits.map(function (h) {
         return {
           id: String(h.id),
@@ -546,6 +550,128 @@ function renderReminderPanel() {
   statusEl.textContent = note + '｜' + permText;
 }
 
+/* ============ 后台推送 ============ */
+function urlBase64ToUint8Array(s) {
+  s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4 !== 0) s += '=';
+  var bin = atob(s);
+  var out = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function b64urlBytes(bytes) {
+  var bin = '';
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function currentTz() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'; } catch (e) { return 'Asia/Shanghai'; }
+}
+
+function pushSupported() {
+  return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+}
+
+function getPushSubscription() {
+  if (!pushSupported()) return Promise.resolve(null);
+  return navigator.serviceWorker.register('sw.js').then(function () {
+    return navigator.serviceWorker.ready.then(function (reg) {
+      return reg.pushManager.getSubscription().then(function (sub) {
+        if (sub) return sub;
+        return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+      });
+    });
+  }).catch(function () { return null; });
+}
+
+function pushPayload(sub) {
+  return {
+    subscription: {
+      endpoint: sub.endpoint,
+      keys: {
+        p256dh: b64urlBytes(new Uint8Array(sub.getKey('p256dh'))),
+        auth: b64urlBytes(new Uint8Array(sub.getKey('auth')))
+      }
+    },
+    time: state.reminderTime,
+    tz: currentTz()
+  };
+}
+
+function registerPush() {
+  return getPushSubscription().then(function (sub) {
+    if (!sub) return false;
+    return fetch(WORKER_URL + '/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pushPayload(sub))
+    }).then(function (res) { return res.ok; }).catch(function () { return false; });
+  });
+}
+
+function enablePush() {
+  return requestNotifyPermission().then(function (p) {
+    if (p !== 'granted') { alert('需要先允许通知权限，才能开启后台推送'); return; }
+    if (!pushSupported()) { alert('当前浏览器不支持后台推送，请使用 Chrome/Edge；iOS 需将网站添加到主屏幕后使用'); return; }
+    return registerPush().then(function (ok) {
+      if (ok) {
+        state.pushEnabled = true;
+        save();
+        renderPushPanel();
+        alert('后台推送已开启 ✅ 关闭网页也能收到提醒');
+      } else {
+        alert('后台推送开启失败：无法连接推送服务器，请稍后重试');
+      }
+    });
+  });
+}
+
+function disablePush() {
+  if (state.pushEnabled && ('serviceWorker' in navigator)) {
+    navigator.serviceWorker.ready.then(function (reg) {
+      return reg.pushManager.getSubscription().then(function (sub) {
+        if (!sub) return;
+        return fetch(WORKER_URL + '/api/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: sub.endpoint })
+        }).catch(function () {});
+      });
+    });
+  }
+  state.pushEnabled = false;
+  save();
+  renderPushPanel();
+  alert('后台推送已关闭');
+}
+
+function syncPushTime() {
+  if (!state.pushEnabled) return;
+  getPushSubscription().then(function (sub) {
+    if (!sub) return;
+    fetch(WORKER_URL + '/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pushPayload(sub))
+    }).catch(function () {});
+  });
+}
+
+function renderPushPanel() {
+  var btn = document.getElementById('pushToggleBtn');
+  var status = document.getElementById('pushStatus');
+  if (!btn || !status) return;
+  var on = state.pushEnabled;
+  btn.textContent = on ? '关闭后台推送' : '开启后台推送';
+  btn.classList.toggle('btn-primary', !on);
+  btn.classList.toggle('btn-ghost', on);
+  var t = on ? '已开启：即使关闭网页，到点也会收到系统推送' : '未开启：开启后即使关闭网页也能收到提醒';
+  if (typeof navigator !== 'undefined' && /iP(hone|ad|od)/.test(navigator.userAgent)) t += '｜iOS 需先「添加到主屏幕」';
+  status.textContent = t;
+}
+
 /* ============ 今日视图 ============ */
 function renderToday() {
   var habits = sortedHabits();
@@ -742,6 +868,7 @@ function renderManage() {
   renderBgPreview();
   renderThemePanel();
   renderReminderPanel();
+  renderPushPanel();
 }
 
 function openRename(id) {
@@ -915,6 +1042,11 @@ document.addEventListener('DOMContentLoaded', function () {
     state.reminderTime = e.target.value || '20:00';
     save();
     renderReminderPanel();
+    syncPushTime();
+  });
+  document.getElementById('pushToggleBtn').addEventListener('click', function () {
+    if (state.pushEnabled) disablePush();
+    else enablePush();
   });
   document.getElementById('reminderToggleBtn').addEventListener('click', function () {
     setReminderEnabled(!state.reminderEnabled);
